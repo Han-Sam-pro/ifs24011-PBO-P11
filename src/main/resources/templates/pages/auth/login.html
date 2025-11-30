@@ -1,11 +1,23 @@
 <!DOCTYPE html>
 <html
+  lang="id"
   xmlns:th="http://www.thymeleaf.org"
   xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
   layout:decorate="~{layouts/base}"
 >
   <head>
-    <title>Masuk - Spring Boot Todolist</title>
+    <!-- 1. Perbaikan: Menambahkan Meta Charset & Viewport -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <title>Masuk - Cash Flow App</title>
+    
+    <!-- 2. Perbaikan: Memindahkan Inline CSS ke sini (atau file .css terpisah) -->
+    <style>
+      .card-login {
+        max-width: 360px;
+      }
+    </style>
   </head>
   <body>
     <div layout:fragment="content" class="mt-5">
@@ -14,7 +26,8 @@
         method="post"
         th:object="${loginForm}"
       >
-        <div class="card mx-auto" style="max-width: 360px">
+        <!-- Menggunakan class custom .card-login menggantikan style="..." -->
+        <div class="card mx-auto card-login">
           <div class="card-body">
             <div>
               <div class="text-center">

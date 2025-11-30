@@ -1,174 +1,351 @@
 <!DOCTYPE html>
-<html
-  xmlns:th="http://www.thymeleaf.org"
-  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-  layout:decorate="~{layouts/base}"
-  lang="id"
->
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Spring Boot Todolist</title>
-  </head>
-  <body>
-    <div layout:fragment="content" class="mt-3">
-      <div class="card">
-        <div class="card-header d-flex">
-          <div class="flex-fill">
-            <h3>Hay, [[${auth.name}]]</h3>
-          </div>
-          <div>
-            <div>
-              <a th:href="@{/auth/logout}" class="btn btn-sm btn-danger"
-                >Keluar</a
-              >
-            </div>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="d-flex mb-2">
-            <div class="flex-fill">
-              <h3>Daftar Todo List</h3>
-            </div>
-            <div>
-              <button
-                class="btn btn-primary"
-                data-bs-toggle="modal"
-                data-bs-target="#addTodoModal"
-              >
-                Tambah Todo
-              </button>
-            </div>
-          </div>
-          <table class="table table-striped">
-            <tr class="table-light">
-              <th>No</th>
-              <th>Judul</th>
-              <th>Dibuat pada</th>
-              <th>Diubah pada</th>
-              <th>Status</th>
-              <th>Tindakan</th>
-            </tr>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Flow App</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .card-summary { transition: transform 0.2s; }
+        .card-summary:hover { transform: translateY(-5px); }
+        .text-pemasukan { color: #198754; font-weight: bold; }
+        .text-pengeluaran { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body class="bg-light">
 
-            <tr th:each="todo, status : ${todos}">
-              <td th:text="${status.index + 1}"></td>
-              <td th:text="${todo.title}"></td>
-              <td
-                th:text="${#temporals.format(todo.createdAt, 'd MMMM yyyy, HH:mm')}"
-              ></td>
-              <td
-                th:text="${#temporals.format(todo.updatedAt, 'd MMMM yyyy, HH:mm')}"
-              ></td>
-              <td>
-                <span th:if="${todo.finished}" class="badge bg-success"
-                  >Selesai</span
-                >
-                <span th:unless="${todo.finished}" class="badge bg-danger"
-                  >Belum selesai</span
-                >
-              </td>
-              <td>
-                <a
-                  th:href="@{/todos/{todoId}(todoId=${todo.id})}"
-                  class="btn btn-sm btn-info"
-                >
-                  Detail
-                </a>
-                <button
-                  th:id="|editTodoButton_${todo.id}|"
-                  th:attr="onclick=|prepareEditTodo(`${todo.id}`, `${todo.title}`, `${todo.description}`, ${todo.finished})|"
-                  class="btn btn-sm btn-warning"
-                >
-                  Edit
-                </button>
-                <button
-                  th:id="|deleteTodoButton_${todo.id}|"
-                  th:attr="onclick=|prepareDeleteTodo(`${todo.id}`, `${todo.title}`)|"
-                  class="btn btn-sm btn-danger"
-                >
-                  Hapus
-                </button>
-              </td>
-            </tr>
-            <tr th:if="${#lists.isEmpty(todos)}">
-              <td colspan="6" class="text-center">
-                Belum ada data todo yang tersedia.
-              </td>
-            </tr>
-          </table>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-wallet me-2"></i>My CashFlow</a>
+            <div class="d-flex text-white align-items-center">
+                <span class="me-3">Halo, <span th:text="${user.name}">User</span></span>
+                <a href="/auth/logout" class="btn btn-sm btn-light text-primary">Logout</a>
+            </div>
         </div>
-      </div>
+    </nav>
 
-      <!-- Modals -->
-      <div th:replace="~{models/todos/add :: addTodoModal}"></div>
-      <div th:replace="~{models/todos/edit :: editTodoModal}"></div>
-      <div th:replace="~{models/todos/delete :: deleteTodoModal}"></div>
+    <div class="container">
+        
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card card-summary border-success mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title text-success">Total Pemasukan</h6>
+                        <h3 id="summary-income">Rp 0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-summary border-danger mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title text-danger">Total Pengeluaran</h6>
+                        <h3 id="summary-expense">Rp 0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-summary border-primary mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title text-primary">Saldo Akhir</h6>
+                        <h3 id="summary-balance">Rp 0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Form Input -->
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Tambah Transaksi</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="cashFlowForm">
+                            <input type="hidden" id="cfId">
+                            
+                            <!-- PERBAIKAN: Menambahkan for="type" -->
+                            <div class="mb-3">
+                                <label class="form-label" for="type">Jenis Transaksi</label>
+                                <select class="form-select" id="type" required>
+                                    <option value="PEMASUKAN">Pemasukan (+)</option>
+                                    <option value="PENGELUARAN">Pengeluaran (-)</option>
+                                </select>
+                            </div>
+
+                            <!-- PERBAIKAN: Menambahkan for="amount" -->
+                            <div class="mb-3">
+                                <label class="form-label" for="amount">Nominal (Rp)</label>
+                                <input type="number" class="form-control" id="amount" required min="1" placeholder="Contoh: 50000">
+                            </div>
+
+                            <!-- PERBAIKAN: Menambahkan for="source" -->
+                            <div class="mb-3">
+                                <label class="form-label" for="source">Sumber / Tujuan</label>
+                                <input type="text" class="form-control" id="source" required placeholder="Cth: Dompet, Bank BCA">
+                            </div>
+
+                            <!-- PERBAIKAN: Menambahkan for="label" -->
+                            <div class="mb-3">
+                                <label class="form-label" for="label">Label / Kategori</label>
+                                <input type="text" class="form-control" id="label" list="labelOptions" required placeholder="Cth: Gaji, Makanan">
+                                <datalist id="labelOptions">
+                                    <!-- Options populated by JS -->
+                                </datalist>
+                            </div>
+
+                            <!-- PERBAIKAN: Menambahkan for="description" -->
+                            <div class="mb-3">
+                                <label class="form-label" for="description">Keterangan (Opsional)</label>
+                                <textarea class="form-control" id="description" rows="2"></textarea>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary" id="btnSave">Simpan Data</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Data -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Riwayat Transaksi</h5>
+                        <div class="input-group input-group-sm w-auto">
+                            <!-- PERBAIKAN: Menambahkan aria-label untuk input pencarian -->
+                            <input type="text" class="form-control" id="searchInput" placeholder="Cari data..." aria-label="Cari data transaksi">
+                            <button class="btn btn-outline-secondary" type="button" onclick="loadData()">Cari</button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Label</th>
+                                        <th>Deskripsi</th>
+                                        <th class="text-end">Jumlah</th>
+                                        <th class="text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableBody">
+                                    <!-- Data populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="loading" class="text-center p-3 d-none">
+                            <div class="spinner-border text-primary" role="status"></div>
+                        </div>
+                        <div id="emptyState" class="text-center p-4 d-none">
+                            <p class="text-muted">Belum ada data transaksi.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Scripts -->
-    <script layout:fragment="others-js">
-      function prepareEditTodo(id, title, description, finished) {
-        /* Set nilai pada form edit */
-        document.getElementById("editTodoId").value = id;
-        document.getElementById("editTodoTitle").value = title;
-        document.getElementById("editTodoDescription").value = description;
-        document.getElementById("editTodoFinished").value = finished
-          ? "1"
-          : "0";
+    <!-- Toast Notification -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto" id="toastTitle">Notifikasi</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Tutup"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                Hello, world! This is a toast message.
+            </div>
+        </div>
+    </div>
 
-        /* Tampilkan modal */
-        var editModal = new bootstrap.Modal(
-          document.getElementById("editTodoModal")
-        );
-        editModal.show();
-      }
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-      function prepareDeleteTodo(id, title) {
-        /* Set nilai pada form delete */
-        document.getElementById("deleteTodoId").value = id;
-        document.getElementById("deleteTodoTitle").innerText = title;
+    <!-- Custom Script Logic -->
+    <script>
+        const API_URL = '/api/cash-flows';
+        
+        const formatRupiah = (number) => {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
+        };
 
-        /* Tampilkan modal */
-        var deleteModal = new bootstrap.Modal(
-          document.getElementById("deleteTodoModal")
-        );
-        deleteModal.show();
-      }
+        const formatDate = (isoDate) => {
+            if(!isoDate) return '-';
+            const date = new Date(isoDate);
+            return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+        };
 
-      document.addEventListener("DOMContentLoaded", function () {
-        /* Cek apakah modal add perlu dibuka otomatis */
-        var addTodoModalOpen = "[[${addTodoModalOpen}]]" === "true";
-        if (addTodoModalOpen) {
-          var addModal = new bootstrap.Modal(
-            document.getElementById("addTodoModal")
-          );
-          addModal.show();
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            loadLabels();
+        });
+
+        async function loadData() {
+            const search = document.getElementById('searchInput').value;
+            const url = search ? `${API_URL}?search=${search}` : API_URL;
+            
+            document.getElementById('loading').classList.remove('d-none');
+            document.getElementById('tableBody').innerHTML = '';
+            
+            try {
+                const response = await fetch(url);
+                const result = await response.json(); 
+                
+                if (result.status === 'success') {
+                    renderTable(result.data.cashFlows);
+                } else {
+                    showToast('Error', result.message, 'text-danger');
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                showToast('Error', 'Gagal mengambil data', 'text-danger');
+            } finally {
+                document.getElementById('loading').classList.add('d-none');
+            }
         }
 
-        /* Cek apakah modal edit perlu dibuka otomatis */
-        var editTodoModalOpen = "[[${editTodoModalOpen}]]" === "true";
-        if (editTodoModalOpen) {
-          const editTodoModalId = "[[${editTodoModalId}]]";
-          const buttonEdit = document.getElementById(
-            `editTodoButton_${editTodoModalId}`
-          );
-          if (buttonEdit) {
-            buttonEdit.click();
-          }
+        function renderTable(cashFlows) {
+            const tableBody = document.getElementById('tableBody');
+            const emptyState = document.getElementById('emptyState');
+            
+            let totalIncome = 0;
+            let totalExpense = 0;
+
+            if (!cashFlows || cashFlows.length === 0) {
+                emptyState.classList.remove('d-none');
+                updateSummary(0, 0);
+                return;
+            }
+
+            emptyState.classList.add('d-none');
+
+            cashFlows.forEach(item => {
+                if (item.type === 'PEMASUKAN') totalIncome += item.amount;
+                else if (item.type === 'PENGELUARAN') totalExpense += item.amount;
+
+                const row = document.createElement('tr');
+                const isIncome = item.type === 'PEMASUKAN';
+                const amountClass = isIncome ? 'text-success' : 'text-danger';
+                const amountSign = isIncome ? '+ ' : '- ';
+
+                // PERBAIKAN: Menambahkan aria-label pada tombol delete agar error "Buttons must have discernible text" hilang
+                row.innerHTML = `
+                    <td>
+                        <div class="fw-bold">${formatDate(item.createdAt)}</div>
+                        <small class="text-muted">${item.source}</small>
+                    </td>
+                    <td><span class="badge bg-secondary">${item.label}</span></td>
+                    <td>${item.description || '-'}</td>
+                    <td class="text-end ${amountClass} fw-bold">
+                        ${amountSign}${formatRupiah(item.amount)}
+                    </td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteData('${item.id}')" aria-label="Hapus transaksi">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            updateSummary(totalIncome, totalExpense);
         }
 
-        /* Cek apakah modal delete perlu dibuka otomatis */
-        var deleteTodoModalOpen = "[[${deleteTodoModalOpen}]]" === "true";
-        if (deleteTodoModalOpen) {
-          const deleteTodoModalId = "[[${deleteTodoModalId}]]";
-          const buttonDelete = document.getElementById(
-            `deleteTodoButton_${deleteTodoModalId}`
-          );
-          if (buttonDelete) {
-            buttonDelete.click();
-          }
+        function updateSummary(income, expense) {
+            document.getElementById('summary-income').textContent = formatRupiah(income);
+            document.getElementById('summary-expense').textContent = formatRupiah(expense);
+            document.getElementById('summary-balance').textContent = formatRupiah(income - expense);
         }
-      });
+
+        document.getElementById('cashFlowForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                type: document.getElementById('type').value,
+                amount: parseInt(document.getElementById('amount').value),
+                source: document.getElementById('source').value,
+                label: document.getElementById('label').value,
+                description: document.getElementById('description').value
+            };
+
+            const btnSave = document.getElementById('btnSave');
+            btnSave.disabled = true;
+            btnSave.textContent = 'Menyimpan...';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showToast('Sukses', 'Data berhasil disimpan', 'text-success');
+                    document.getElementById('cashFlowForm').reset();
+                    loadData();
+                    loadLabels();
+                } else {
+                    showToast('Gagal', result.message, 'text-danger');
+                }
+            } catch (error) {
+                showToast('Error', 'Terjadi kesalahan sistem', 'text-danger');
+            } finally {
+                btnSave.disabled = false;
+                btnSave.textContent = 'Simpan Data';
+            }
+        });
+
+        async function deleteData(id) {
+            if(!confirm('Apakah Anda yakin ingin menghapus data ini?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showToast('Sukses', 'Data dihapus', 'text-success');
+                    loadData();
+                } else {
+                    showToast('Gagal', 'Gagal menghapus data', 'text-danger');
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function loadLabels() {
+            try {
+                const response = await fetch(`${API_URL}/labels`);
+                const result = await response.json();
+                if(result.status === 'success') {
+                    const datalist = document.getElementById('labelOptions');
+                    datalist.innerHTML = '';
+                    result.data.labels.forEach(label => {
+                        const option = document.createElement('option');
+                        option.value = label;
+                        datalist.appendChild(option);
+                    });
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function showToast(title, message, colorClass) {
+            const toastEl = document.getElementById('liveToast');
+            document.getElementById('toastTitle').textContent = title;
+            document.getElementById('toastTitle').className = `me-auto fw-bold ${colorClass}`;
+            document.getElementById('toastMessage').textContent = message;
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+        }
     </script>
-  </body>
+</body>
 </html>

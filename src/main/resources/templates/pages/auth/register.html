@@ -1,11 +1,25 @@
 <!DOCTYPE html>
 <html
+  lang="id"
   xmlns:th="http://www.thymeleaf.org"
   xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
   layout:decorate="~{layouts/base}"
 >
   <head>
-    <title>Daftar - Spring Boot Todolist</title>
+    <!-- 1. Perbaikan: Meta Charset -->
+    <meta charset="UTF-8" />
+    
+    <!-- 2. Perbaikan: Meta Viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <title>Daftar - Spring Boot Cashflow</title>
+
+    <!-- 3. Perbaikan: Pindahkan inline style ke sini -->
+    <style>
+      .card-register {
+        max-width: 360px;
+      }
+    </style>
   </head>
   <body>
     <div layout:fragment="content" class="mt-5">
@@ -14,7 +28,8 @@
         method="post"
         th:object="${registerForm}"
       >
-        <div class="card mx-auto" style="max-width: 360px">
+        <!-- 4. Perbaikan: Gunakan class .card-register, hapus style="..." -->
+        <div class="card mx-auto card-register">
           <div class="card-body">
             <div>
               <div class="text-center">
@@ -105,10 +120,11 @@
                 </div>
               </div>
 
-              <!-- Tombol Masuk -->
+              <!-- Tombol Daftar -->
               <div class="form-group mt-3 text-end">
+                <!-- Ubah teks tombol dari 'Masuk' ke 'Daftar' agar sesuai konteks -->
                 <button type="submit" class="btn btn-primary btn-block">
-                  Masuk
+                  Daftar
                 </button>
               </div>
 

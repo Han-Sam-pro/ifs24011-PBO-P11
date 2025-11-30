@@ -1,8 +1,6 @@
 package org.delcom.app.views;
 
-import org.delcom.app.dto.TodoForm;
 import org.delcom.app.entities.User;
-import org.delcom.app.services.TodoService;
 import org.delcom.app.utils.ConstUtil;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -14,17 +12,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class HomeView {
 
-    private final TodoService todoService;
-
-    public HomeView(TodoService todoService) {
-        this.todoService = todoService;
+    // Kita tidak butuh Service di sini karena komunikasi data via REST API (JavaScript)
+    public HomeView() {
     }
 
-    @GetMapping
+    @GetMapping("/")
     public String home(Model model) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if ((authentication instanceof AnonymousAuthenticationToken)) {
-            return "redirect:/auth/logout";
+        
+        // Cek login
+        if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+            return "redirect:/auth/login"; // Sesuaikan jika path login Anda berbeda
         }
 
         Object principal = authentication.getPrincipal();
@@ -33,14 +31,12 @@ public class HomeView {
         }
 
         User authUser = (User) principal;
-        model.addAttribute("auth", authUser);
-
-        // Todos
-        var todos = todoService.getAllTodos(authUser.getId(), "");
-        model.addAttribute("todos", todos);
-
-        // Todo Form
-        model.addAttribute("todoForm", new TodoForm());
+        
+        // Kirim data user ke view untuk sambutan "Halo, NamaUser"
+        model.addAttribute("user", authUser);
+        
+        // Tidak perlu mengirim 'TodoForm' atau 'CashFlow' object.
+        // Form akan ditangani via JavaScript/JSON.
 
         return ConstUtil.TEMPLATE_PAGES_HOME;
     }
